@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SongController;
+use App\Http\Controllers\AlbumController;
+use App\Http\Controllers\ArtistController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 /*
@@ -18,5 +21,11 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::apiResource('artists', ArtistController::class);
+Route::apiResource('albums', AlbumController::class);
+Route::apiResource('songs', SongController::class);
+
+Route::get('songs/search', [SongController::class, 'search']);
 
 require __DIR__.'/auth.php';
