@@ -465,6 +465,78 @@
                 }
             }
         },
+        "/api/artists/search/name": {
+            "get": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Search artists by name",
+                "operationId": "01c0d739b9225a0b42e22757ca0b1f35",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search term for artist name",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "Coldplay"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Artist"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/artists/search/genre": {
+            "get": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Search artists by genre",
+                "operationId": "512674e623bbc0df0435905e4e5eb87c",
+                "parameters": [
+                    {
+                        "name": "genre",
+                        "in": "query",
+                        "description": "Search term for artist genre",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "Rock"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Artist"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/login": {
             "post": {
                 "tags": [

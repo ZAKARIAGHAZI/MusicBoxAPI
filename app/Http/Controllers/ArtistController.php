@@ -70,16 +70,36 @@ class ArtistController extends Controller
      *         description="Artist created successfully",
      *         @OA\JsonContent(ref="#/components/schemas/Artist")
      *     ),
+     *     @OA\Response(
+     *         response=409,
+     *         description="Artist already exists",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Artist already exists"),
+     *             @OA\Property(
+     *                 property="artist",
+     *                 ref="#/components/schemas/Artist"
+     *             )
+     *         )
+     *     ),
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string',
-            'genre' => 'nullable|string',
+            'name'    => 'required|string',
+            'genre'   => 'nullable|string',
             'country' => 'nullable|string',
         ]);
+
+        $existingArtist = Artist::where('name', $validated['name'])->first();
+
+        if ($existingArtist) {
+            return response()->json([
+                'message' => 'Artist already exists',
+                'artist'  => $existingArtist
+            ], 409); // Conflict
+        }
 
         return Artist::create($validated);
     }
@@ -164,5 +184,66 @@ class ArtistController extends Controller
     {
         Artist::destroy($id);
         return response()->json(['message' => 'Artist deleted']);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/artists/search/name",
+     *     summary="Search artists by name",
+     *     tags={"Artists"},
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         description="Search term for artist name",
+     *         required=true,
+     *         @OA\Schema(type="string", example="Coldplay")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Artist"))
+     *     )
+     * )
+     */
+    public function searchByName(Request $request)
+    {
+        $name = $request->input('name');
+
+        $artists = Artist::with('albums')
+            ->where('name', 'like', "%{$name}%")
+            ->get();
+
+        return response()->json($artists);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/artists/search/genre",
+     *     summary="Search artists by genre",
+     *     tags={"Artists"},
+     *     @OA\Parameter(
+     *         name="genre",
+     *         in="query",
+     *         description="Search term for artist genre",
+     *         required=true,
+     *         @OA\Schema(type="string", example="Rock")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Artist"))
+     *     )
+     * )
+     */
+    public function searchByGenre(Request $request)
+    {
+        $genre = $request->input('genre');
+
+        $artists = Artist::with('albums')
+            ->where('genre', 'like', "%{$genre}%")
+            ->get();
+
+        return response()->json($artists);
     }
 }

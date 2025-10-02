@@ -23,6 +23,11 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::apiResource('artists', ArtistController::class);
+Route::get('/artists/search/name', [ArtistController::class, 'searchByName']);
+Route::get('/artists/search/genre', [ArtistController::class, 'searchByGenre']);
+
+
+
 Route::apiResource('albums', AlbumController::class);
 Route::apiResource('songs', SongController::class);
 
