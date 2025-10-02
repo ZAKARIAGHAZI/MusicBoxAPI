@@ -55,19 +55,46 @@ class AlbumController extends Controller
      *         description="Album created successfully",
      *         @OA\JsonContent(ref="#/components/schemas/Album")
      *     ),
-     *     @OA\Response(response=422, description="Validation error")
+     *     @OA\Response(
+     *         response=409,
+     *         description="Album already exists for this artist",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Album already exists for this artist"),
+     *             @OA\Property(property="album", ref="#/components/schemas/Album")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
      * )
      */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string',
-            'year' => 'nullable|integer',
+            'title'     => 'required|string',
+            'year'      => 'nullable|integer',
             'artist_id' => 'required|exists:artists,id',
         ]);
 
-        return Album::create($validated);
+        // Check if album already exists for this artist
+        $existingAlbum = Album::where('title', $validated['title'])
+            ->where('artist_id', $validated['artist_id'])
+            ->first();
+
+        if ($existingAlbum) {
+            return response()->json([
+                'message' => 'Album already exists for this artist',
+                'album'   => $existingAlbum
+            ], 409); // Conflict
+        }
+
+        $album = Album::create($validated);
+
+        return response()->json($album, 201);
     }
+
 
     /**
      * @OA\Get(
@@ -125,9 +152,18 @@ class AlbumController extends Controller
     public function update(Request $request, $id)
     {
         $album = Album::findOrFail($id);
-        $album->update($request->all());
-        return $album;
+
+        $validated = $request->validate([
+            'title'     => 'sometimes|required|string',
+            'year'      => 'nullable|integer',
+            'artist_id' => 'sometimes|required|exists:artists,id',
+        ]);
+
+        $album->update($validated);
+
+        return response()->json($album, 200);
     }
+
 
     /**
      * @OA\Delete(

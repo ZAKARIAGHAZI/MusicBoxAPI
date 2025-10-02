@@ -55,19 +55,48 @@ class SongController extends Controller
      *         description="Song created successfully",
      *         @OA\JsonContent(ref="#/components/schemas/Song")
      *     ),
-     *     @OA\Response(response=422, description="Validation error")
+     *     @OA\Response(
+     *         response=409,
+     *         description="Song already exists in this album",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Song already exists in this album"),
+     *             @OA\Property(property="song", ref="#/components/schemas/Song")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
      * )
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string',
-            'duration' => 'nullable|integer',
-            'album_id' => 'required|exists:albums,id',
+            'title'     => 'required|string|max:255',
+            'duration'  => 'nullable|integer',
+            'album_id'  => 'required|exists:albums,id',
         ]);
 
-        return Song::create($validated);
+        // Check if song already exists in this album
+        $existingSong = Song::where('title', $validated['title'])
+            ->where('album_id', $validated['album_id'])
+            ->first();
+
+        if ($existingSong) {
+            return response()->json([
+                'message' => 'Song already exists in this album',
+                'song'    => $existingSong
+            ], 409); // Conflict
+        }
+
+        $song = Song::create($validated);
+
+        return response()->json([
+            'message' => 'Song created successfully',
+            'data'    => $song
+        ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -117,16 +146,34 @@ class SongController extends Controller
      *     @OA\Response(
      *         response=200,
      *         description="Song updated successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Song")
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Song updated successfully"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Song")
+     *         )
      *     ),
-     *     @OA\Response(response=404, description="Song not found")
+     *     @OA\Response(
+     *         response=404,
+     *         description="Song not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Song not found")
+     *         )
+     *     )
      * )
      */
     public function update(Request $request, $id)
     {
         $song = Song::findOrFail($id);
-        $song->update($request->all());
-        return $song;
+        $validated = $request->validate([
+            'title'     => 'sometimes|required|string|max:255',
+            'duration'  => 'nullable|integer',
+            'album_id'  => 'sometimes|required|exists:albums,id',
+        ]);
+        $song->update($validated);
+
+        return response()->json([
+            'message' => 'Song updated successfully',
+            'data'    => $song
+        ], 200);
     }
 
     /**

@@ -160,8 +160,16 @@ class ArtistController extends Controller
     public function update(Request $request, $id)
     {
         $artist = Artist::findOrFail($id);
-        $artist->update($request->all());
-        return $artist;
+        $validated = $request->validate([
+            'name'    => 'sometimes|required|string',
+            'genre'   => 'sometimes|nullable|string',
+            'country' => 'sometimes|nullable|string',
+        ]);
+        $artist->update($validated);
+        return response()->json([
+            'message' => 'Artist updated successfully',
+            'data'    => $artist
+        ], 200);
     }
 
     /**
@@ -201,11 +209,22 @@ class ArtistController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Artist"))
+     *         description="List of artists matching the name",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Artist")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No artist found with that name",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No artist found with that name")
+     *         )
      *     )
      * )
      */
+
     public function searchByName(Request $request)
     {
         $name = $request->input('name');
@@ -214,7 +233,13 @@ class ArtistController extends Controller
             ->where('name', 'like', "%{$name}%")
             ->get();
 
-        return response()->json($artists);
+        if ($artists->isEmpty()) {
+            return response()->json([
+                'message' => 'No artist found with that name'
+            ], 404);
+        }
+
+        return response()->json($artists, 200);
     }
 
     /**
@@ -231,8 +256,18 @@ class ArtistController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Artist"))
+     *         description="List of artists matching the genre",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Artist")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No artist found with that genre",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No artist found with that genre")
+     *         )
      *     )
      * )
      */
@@ -244,6 +279,12 @@ class ArtistController extends Controller
             ->where('genre', 'like', "%{$genre}%")
             ->get();
 
-        return response()->json($artists);
+        if ($artists->isEmpty()) {
+            return response()->json([
+                'message' => 'No artist found with that genre'
+            ], 404);
+        }
+
+        return response()->json($artists, 200);
     }
 }
